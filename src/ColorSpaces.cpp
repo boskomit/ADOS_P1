@@ -1,4 +1,4 @@
-#include "ColorSpaces.h"
+    #include "ColorSpaces.h"
 
 /********************************************************************************************************************************/
 /* RGB processing */
@@ -196,25 +196,99 @@ void procesing_YUV422(uchar Y_buff[], char U_buff[], char V_buff[], int x, int y
 /*******************************************************************************************************************************/
 /* YUV420 processing */
 /*******************************************************************************************************************************/
-void RGBtoYUV420(const uchar rgbImg[], int x, int y, uchar Y_buff[], char U_buff[], char V_buff[]) 
+void RGBtoYUV420(const uchar rgbImg[], int x, int y, uchar Y_buff[], char U_buff[], char V_buff[])
 {
-	uchar R, G, B;
-	double U, V;
-	// TO DO
+    uint8_t R, G, B;
+    double U, V;
+    // TO DO
+    for(int yy = 0; yy < y; yy+=2){
+        for(int xx = 0; xx < x; xx+=2){
+            U = 0;
+            V = 0;
+
+            for(int yb = 0; yb < 2; yb++){
+                for(int xb = 0; xb < 2; xb++){
+                    R = rgbImg[((yy+yb)*x + (xx+xb))*3 + 0];
+                    G = rgbImg[((yy+yb)*x + (xx+xb))*3 + 1];
+                    B = rgbImg[((yy+yb)*x + (xx+xb))*3 + 2];
+
+                    double Y_val = 0.299*R + 0.587*G + 0.114*B;
+                    if(Y_val > 255)
+                        Y_val = 255;
+                    else if (Y_val < 0)
+                        Y_val = 0;
+
+                    Y_buff[(yy + yb)*x + (xx + xb)] = (uchar)Y_val;
+                    U += -0.14713*R - 0.28886*G + 0.436*B;
+                    V += 0.615*R - 0.51499*G - 0.10001*B;
+                }
+            }
+
+            U_buff[yy*x/4 + xx/2] = U / 4;
+            V_buff[yy*x/4 + xx/2] = V / 4;
+
+            }
+        }
 }
 
-void YUV420toRGB(const uchar Y_buff[], const char U_buff[], const char V_buff[], int x, int y, uchar rgbImg[]) 
+void YUV420toRGB(const uchar Y_buff[], const char U_buff[], const char V_buff[], int x, int y, uchar rgbImg[])
 {
-	double R,G,B;
-	double Y, U, V;
+    double R,G,B;
+    double Y, U, V;
 
-	// TO DO
+    // TO DO
+    for(int yy = 0; yy < y-1; yy += 2){
+        for(int xx = 0; xx < x-1; xx += 2){
+            U = U_buff[(yy/2)*x/2 + xx/2];
+            V = V_buff[(yy/2)*x/2 + xx/2];
+
+            for(int yb = 0; yb < 2; yb++){
+                for(int xb = 0; xb < 2; xb++){
+                    Y = Y_buff[(yy+yb)*x + (xx+xb)];
+
+                    R = Y + 1.13983*V;
+                    G = Y -0.39465*U - 0.58060*V;
+                    B = Y + 2.03211*U;
+
+                    if(R < 0){
+                        R = 0;
+                    }else if(R > 255){
+                        R = 255;
+                    }
+                    if(G < 0){
+                        G = 0;
+                    }else if(G > 255){
+                        G = 255;
+                    }
+                    if(B < 0){
+                        B = 0;
+                    }else if(B > 255){
+                        B = 255;
+                    }
+
+                    rgbImg[((yy+yb)*x + (xx+xb))*3 + 0] = R;
+                    rgbImg[((yy+yb)*x + (xx+xb))*3 + 1] = G;
+                    rgbImg[((yy+yb)*x + (xx+xb))*3 + 2] = B;
+                }
+            }
+        }
+    }
 }
 
 void procesing_YUV420(uchar Y_buff[], char U_buff[], char V_buff[], int x, int y, double Y, double U, double V)
 {
-	// TO DO
+    for(int yy = 0; yy < y; yy++){
+        for(int xx = 0; xx < x; xx++){
+            Y_buff[yy*x + xx] *= Y;
+        }
+    }
 
+    for(int yy = 0; yy < y/2; yy++){
+        for(int xx = 0; xx < x/2; xx++){
+            U_buff[yy*x/2 + xx] *= U;
+            V_buff[yy*x/2 + xx] *= V;
+        }
+    }
 }
 
 /*******************************************************************************************************************************/
@@ -222,7 +296,15 @@ void procesing_YUV420(uchar Y_buff[], char U_buff[], char V_buff[], int x, int y
 /*******************************************************************************************************************************/
 void decimate_Y(uchar Y_buff[], int x, int y)
 {
-	uchar YY;
-	// TO DO
+    uchar YY;
 
+    for(int yy = 0; yy < y; yy += 2){
+        for(int xx = 0; xx < x; xx += 2){
+
+            YY = Y_buff[yy*x + xx];
+            Y_buff[yy*x + (xx+1)] = YY;
+            Y_buff[(yy+1)*x + xx] = YY;
+            Y_buff[(yy+1)*x + (xx+1)] = YY;
+        }
+    }
 }
